@@ -1,5 +1,5 @@
 import { supabase } from '../../../lib/supabase';
-import type { Asignacion, Pedido, Causa, Perito, Apertura } from '../../../types/domain';
+import type { Pedido, Causa, Perito, Apertura } from '../../../types/domain';
 
 export interface AsignarPeritoPayload {
   pedido_id: string;
@@ -9,34 +9,29 @@ export interface AsignarPeritoPayload {
   observaciones?: string;
 }
 
-export interface AsignacionConRelaciones extends Asignacion {
-  pedidos: (Pedido & {
-    causas: Causa | null;
-    fiscales: { nombre: string } | null;
-    aperturas: Pick<Apertura, 'fecha_apertura' | 'hora_apertura'> | null;
-  }) | null;
-  peritos: Perito | null;
+export interface PedidoAsignacionVista extends Pedido {
+  causas: Causa | null;
+  fiscales: { nombre: string } | null;
+  aperturas: Pick<Apertura, 'fecha_apertura' | 'hora_apertura'> | null;
+  asignaciones: { activa: boolean; peritos: Perito | null }[];
 }
 
 export const asignacionesService = {
-  listar: async (): Promise<AsignacionConRelaciones[]> => {
+  listar: async (): Promise<PedidoAsignacionVista[]> => {
     const { data, error } = await supabase
-      .from('asignaciones')
+      .from('pedidos')
       .select(`
         *,
-        pedidos (
-          *,
-          causas ( nro_legajo, anio, caratula_autos ),
-          fiscales ( nombre ),
-          aperturas ( fecha_apertura, hora_apertura )
-        ),
-        peritos ( nombre, especialidad )
+        causas ( nro_legajo, anio, caratula_autos ),
+        fiscales ( nombre ),
+        aperturas ( fecha_apertura, hora_apertura ),
+        asignaciones ( activa, peritos ( nombre, especialidad ) )
       `)
-      .eq('activa', true)
-      .order('fecha_asignacion', { ascending: false });
+      .eq('activo', true)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return (data ?? []) as AsignacionConRelaciones[];
+    return (data ?? []) as unknown as PedidoAsignacionVista[];
   },
 
   asignar: async (payload: AsignarPeritoPayload, userId: string): Promise<void> => {

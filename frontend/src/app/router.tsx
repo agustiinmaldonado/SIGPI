@@ -4,6 +4,7 @@ import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { PedidosRecibidosPage } from '../features/pedidos/pages/PedidosRecibidosPage';
 import { NuevoPedidoPage } from '../features/pedidos/pages/NuevoPedidoPage';
 import { DetallePedidoPage } from '../features/pedidos/pages/DetallePedidoPage';
+import { EditarPedidoPage } from '../features/pedidos/pages/EditarPedidoPage';
 import { AsignarPeritoPage } from '../features/pedidos/pages/AsignarPeritoPage';
 import { AgendaPage } from '../features/pedidos/pages/AgendaPage';
 import { AsignacionesPage } from '../features/pedidos/pages/AsignacionesPage';
@@ -66,6 +67,14 @@ export const router = createBrowserRouter([
         element: (
           <RoleGuard allowedRoles={['MESA_ENTRADA', 'COORDINADOR']}>
             <AsignarPeritoPage />
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'pedidos/:id/editar',
+        element: (
+          <RoleGuard allowedRoles={['MESA_ENTRADA', 'COORDINADOR']}>
+            <EditarPedidoPage />
           </RoleGuard>
         ),
       },

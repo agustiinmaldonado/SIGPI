@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Users, FileText, Package, ClipboardList } from 'lucide-react';
+import { ChevronLeft, Users, FileText, Package, ClipboardList, Pencil } from 'lucide-react';
 import { pedidosService, type PedidoConRelaciones } from '../services/pedidosService';
 import { BadgeEstado, BadgePrioridad } from '../components/BadgesPedido';
 import { Button } from '../../../components/ui/Button';
@@ -84,15 +84,27 @@ export const DetallePedidoPage = () => {
             </p>
           </div>
         </div>
-        {(pedido.estado === 'PENDIENTE_ASIGNACION' || pedido.estado === 'REGISTRADO') && (
-          <Link
-            to={`/pedidos/${pedido.id}/asignar`}
-            className="inline-flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700 shadow-sm h-10 px-4 text-sm font-medium transition-colors"
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Asignar perito
-          </Link>
-        )}
+        {/* Acciones: solo si el pedido está en etapas iniciales */}
+        <div className="flex items-center gap-2 shrink-0">
+          {(pedido.estado === 'PENDIENTE_ASIGNACION' || pedido.estado === 'REGISTRADO') && (
+            <Link
+              to={`/pedidos/${pedido.id}/editar`}
+              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-sm h-10 px-4 text-sm font-medium transition-colors"
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Editar datos
+            </Link>
+          )}
+          {(pedido.estado === 'PENDIENTE_ASIGNACION' || pedido.estado === 'REGISTRADO') && (
+            <Link
+              to={`/pedidos/${pedido.id}/asignar`}
+              className="inline-flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700 shadow-sm h-10 px-4 text-sm font-medium transition-colors"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Asignar perito
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Datos de la causa */}

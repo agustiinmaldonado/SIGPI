@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, X, Eye } from 'lucide-react';
-import { asignacionesService, type AsignacionConRelaciones } from '../services/asignacionesService';
+import { Search, X, Eye, Users } from 'lucide-react';
+import { asignacionesService, type PedidoAsignacionVista } from '../services/asignacionesService';
 import { BadgeEstado, BadgePrioridad } from '../components/BadgesPedido';
 import type { EstadoPedido } from '../../../types/domain';
 
@@ -17,7 +17,7 @@ const ESTADOS: { value: EstadoPedido | ''; label: string }[] = [
 ];
 
 export const AsignacionesPage = () => {
-  const [asignaciones, setAsignaciones] = useState<AsignacionConRelaciones[]>([]);
+  const [pedidos, setPedidos] = useState<PedidoAsignacionVista[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -25,12 +25,13 @@ export const AsignacionesPage = () => {
   const [filtroPerito, setFiltroPerito] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<EstadoPedido | ''>('');
 
+
   useEffect(() => {
     const cargar = async () => {
       try {
         setLoading(true);
         const data = await asignacionesService.listar();
-        setAsignaciones(data);
+        setPedidos(data);
       } catch (err: any) {
         setError(err.message || 'Error al cargar asignaciones');
       } finally {
@@ -40,27 +41,32 @@ export const AsignacionesPage = () => {
     cargar();
   }, []);
 
-  const asignacionesFiltradas = asignaciones.filter((a) => {
-    const pedido = a.pedidos;
-    if (!pedido) return false;
+  const pedidosFiltrados = useMemo(() => {
+    return pedidos.filter((pedido) => {
+      // Determinar perito activo actual, si tiene
+      const asignacionActiva = pedido.asignaciones?.find((asig) => asig.activa);
+      const nombrePerito = asignacionActiva?.peritos?.nombre ?? '';
 
-    const busq = busqueda.toLowerCase();
-    const legajo = pedido.causas?.nro_legajo ?? '';
-    const caratula = pedido.causas?.caratula_autos ?? '';
-    
-    const matchBusqueda =
-      !busqueda ||
-      pedido.nro_interno.toLowerCase().includes(busq) ||
-      legajo.toLowerCase().includes(busq) ||
-      caratula.toLowerCase().includes(busq);
+      // Filtro general (número, legajo, carátula)
+      const busq = busqueda.toLowerCase();
+      const legajo = pedido.causas?.nro_legajo ?? '';
+      const caratula = pedido.causas?.caratula_autos ?? '';
       
-    const nombrePerito = a.peritos?.nombre?.toLowerCase() ?? '';
-    const matchPerito = !filtroPerito || nombrePerito.includes(filtroPerito.toLowerCase());
-    
-    const matchEstado = !filtroEstado || pedido.estado === filtroEstado;
-    
-    return matchBusqueda && matchPerito && matchEstado;
-  });
+      const matchBusqueda =
+        !busqueda ||
+        pedido.nro_interno.toLowerCase().includes(busq) ||
+        legajo.toLowerCase().includes(busq) ||
+        caratula.toLowerCase().includes(busq);
+        
+      // Filtro perito
+      const matchPerito = !filtroPerito || nombrePerito.toLowerCase().includes(filtroPerito.toLowerCase());
+      
+      // Filtro estado
+      const matchEstado = !filtroEstado || pedido.estado === filtroEstado;
+      
+      return matchBusqueda && matchPerito && matchEstado;
+    });
+  }, [pedidos, busqueda, filtroPerito, filtroEstado]);
 
   const limpiarFiltros = () => {
     setBusqueda('');
@@ -127,9 +133,9 @@ export const AsignacionesPage = () => {
           </div>
         ) : error ? (
           <div className="py-12 text-center text-red-600 text-sm">{error}</div>
-        ) : asignacionesFiltradas.length === 0 ? (
+        ) : pedidosFiltrados.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-gray-500 text-sm">No hay asignaciones registradas que coincidan con los filtros.</p>
+            <p className="text-gray-500 text-sm">No hay pedidos o asignaciones que coincidan con los filtros.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -148,50 +154,75 @@ export const AsignacionesPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {asignacionesFiltradas.map((a) => (
-                  <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-blue-700">{a.pedidos?.nro_interno}</td>
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
-                        {a.pedidos?.causas?.nro_legajo ?? '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-800 max-w-[200px] truncate" title={a.pedidos?.causas?.caratula_autos}>
-                      {a.pedidos?.causas?.caratula_autos ?? '—'}
-                    </td>
-                    <td className="px-4 py-3 text-gray-700">{a.pedidos?.fiscales?.nombre ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-900 font-medium">{a.peritos?.nombre ?? '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {a.pedidos?.aperturas ? (
-                        <div>
-                          <div className="text-gray-900">
-                            {new Date(a.pedidos.aperturas.fecha_apertura + 'T00:00:00').toLocaleDateString('es-AR')}
+                {pedidosFiltrados.map((pedido) => {
+                  const asignacionActiva = pedido.asignaciones?.find((asig) => asig.activa);
+                  const estaAsignado = !!asignacionActiva;
+
+                  return (
+                    <tr key={pedido.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-blue-700">{pedido.nro_interno}</td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
+                          {pedido.causas?.nro_legajo ?? '—'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-800 max-w-[200px] truncate" title={pedido.causas?.caratula_autos}>
+                        {pedido.causas?.caratula_autos ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{pedido.fiscales?.nombre ?? '—'}</td>
+                      
+                      {/* Perito */}
+                      <td className="px-4 py-3 text-gray-900 font-medium">
+                        {estaAsignado ? asignacionActiva.peritos?.nombre : <span className="text-gray-400">—</span>}
+                      </td>
+                      
+                      {/* Apertura */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {estaAsignado && pedido.aperturas ? (
+                          <div>
+                            <div className="text-gray-900">
+                              {new Date(pedido.aperturas.fecha_apertura + 'T00:00:00').toLocaleDateString('es-AR')}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {pedido.aperturas.hora_apertura ? pedido.aperturas.hora_apertura.substring(0, 5) : ''}
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-500">
-                            {a.pedidos.aperturas.hora_apertura ? a.pedidos.aperturas.hora_apertura.substring(0, 5) : ''}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 italic">Sin programar</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {a.pedidos && <BadgePrioridad prioridad={a.pedidos.prioridad} />}
-                    </td>
-                    <td className="px-4 py-3">
-                      {a.pedidos && <BadgeEstado estado={a.pedidos.estado} />}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <Link
-                        to={`/pedidos/${a.pedidos?.id}`}
-                        className="inline-flex items-center text-gray-400 hover:text-blue-600 transition-colors p-1 rounded"
-                        title="Ver detalle del pedido"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                      
+                      <td className="px-4 py-3">
+                        <BadgePrioridad prioridad={pedido.prioridad} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <BadgeEstado estado={pedido.estado} />
+                      </td>
+                      
+                      {/* Acciones */}
+                      <td className="px-4 py-3 text-center">
+                        {estaAsignado ? (
+                          <Link
+                            to={`/pedidos/${pedido.id}`}
+                            className="inline-flex items-center text-gray-400 hover:text-blue-600 transition-colors p-1 rounded"
+                            title="Ver detalle del pedido"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        ) : (
+                          <Link
+                            to={`/pedidos/${pedido.id}/asignar`}
+                            className="inline-flex items-center justify-center gap-1 bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
+                            title="Asignar perito"
+                          >
+                            <Users className="h-3.5 w-3.5" />
+                            Asignar
+                          </Link>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

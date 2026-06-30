@@ -40,6 +40,24 @@ export interface CrearPedidoPayload {
   puntos_descripcion?: string;
   puntos_observaciones?: string;
 }
+export interface ActualizarPedidoPayload {
+  // Pedido
+  nro_oficio?: string;
+  medio_recepcion?: string;
+  descripcion_inicial?: string;
+  prioridad: 'NORMAL' | 'URGENTE' | 'MUY_URGENTE' | 'CRITICA';
+  fecha_estimada?: string;
+  observaciones?: string;
+  // Causa (caratula, tipo, delito)
+  caratula_autos: string;
+  tipo_causa?: string;
+  delito?: string;
+  // Fiscal
+  fiscal_nombre: string;
+  fiscalia_nombre: string;
+  circunscripcion: string;
+  contacto?: string;
+}
 
 export const pedidosService = {
   listar: async (): Promise<PedidoConRelaciones[]> => {
@@ -215,5 +233,62 @@ export const pedidosService = {
     });
 
     return pedidoId;
+  },
+
+  actualizar: async (
+    pedidoId: string,
+    pedido: PedidoConRelaciones,
+    payload: ActualizarPedidoPayload
+  ): Promise<void> => {
+    // 1. Actualizar la causa si tiene causa_id
+    if (pedido.causa_id) {
+      const { error: errCausa } = await supabase
+        .from('causas')
+        .update({
+          caratula_autos: payload.caratula_autos,
+          tipo_causa: payload.tipo_causa,
+          delito: payload.delito,
+        })
+        .eq('id', pedido.causa_id);
+      if (errCausa) throw errCausa;
+    }
+
+    // 2. Actualizar fiscalía si existe
+    if (pedido.fiscal_id) {
+      // Obtener fiscalia_id del fiscal actual
+      const { data: fiscalActual } = await supabase
+        .from('fiscales')
+        .select('fiscalia_id')
+        .eq('id', pedido.fiscal_id)
+        .single();
+
+      if (fiscalActual?.fiscalia_id) {
+        await supabase
+          .from('fiscalias')
+          .update({ nombre: payload.fiscalia_nombre, circunscripcion: payload.circunscripcion })
+          .eq('id', fiscalActual.fiscalia_id);
+      }
+
+      // Actualizar fiscal
+      await supabase
+        .from('fiscales')
+        .update({ nombre: payload.fiscal_nombre, contacto: payload.contacto })
+        .eq('id', pedido.fiscal_id);
+    }
+
+    // 3. Actualizar el pedido
+    const { error: errPedido } = await supabase
+      .from('pedidos')
+      .update({
+        nro_oficio: payload.nro_oficio,
+        medio_recepcion: payload.medio_recepcion,
+        descripcion_inicial: payload.descripcion_inicial,
+        prioridad: payload.prioridad,
+        fecha_estimada: payload.fecha_estimada || null,
+        observaciones: payload.observaciones,
+      })
+      .eq('id', pedidoId);
+
+    if (errPedido) throw errPedido;
   },
 };
