@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: sigpi-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-sigpi_db}
+      MYSQL_USER: ${MYSQL_USER:-sigpi_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sigpi_pass}
+      TZ: America/Argentina/Buenos_Aires
+    ports:
+      - "3306:3306"
+    volumes:
+      - sigpi-mysql-data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    restart: unless-stopped
+
+volumes:
+  sigpi-mysql-data:
