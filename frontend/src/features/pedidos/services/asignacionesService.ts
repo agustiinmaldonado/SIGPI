@@ -25,7 +25,7 @@ export const asignacionesService = {
         causas ( nro_legajo, anio, caratula_autos ),
         fiscales ( nombre ),
         aperturas ( fecha_apertura, hora_apertura ),
-        asignaciones ( activa, peritos ( nombre, especialidad ) )
+        asignaciones ( activa, peritos ( id, perfil_id, nombre, especialidad ) )
       `)
       .eq('activo', true)
       .order('created_at', { ascending: false });

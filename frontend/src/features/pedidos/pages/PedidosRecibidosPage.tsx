@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Search, X, Eye } from 'lucide-react';
+import { useAuth } from '../../../app/providers/AuthProvider';
 import { pedidosService, type PedidoConRelaciones } from '../services/pedidosService';
 import { BadgeEstado, BadgePrioridad } from '../components/BadgesPedido';
 import { Button } from '../../../components/ui/Button';
@@ -34,6 +35,8 @@ export const PedidosRecibidosPage = () => {
   const [filtroEstado, setFiltroEstado] = useState<EstadoPedido | ''>('');
   const [filtroPrioridad, setFiltroPrioridad] = useState<PrioridadPedido | ''>('');
 
+  const { profile } = useAuth();
+
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -50,6 +53,18 @@ export const PedidosRecibidosPage = () => {
   }, []);
 
   const pedidosFiltrados = pedidos.filter((p) => {
+    // Determinar perito activo actual, si tiene
+    const asignacionActiva = p.asignaciones?.find((asig) => asig.activa);
+    const estaAsignado = !!asignacionActiva;
+    const peritoPerfilId = asignacionActiva?.peritos?.perfil_id;
+
+    // Filtro de Rol: si es PERITO, solo ve sus asignados
+    if (profile?.rol === 'PERITO') {
+      if (!estaAsignado || peritoPerfilId !== profile.id) {
+        return false;
+      }
+    }
+
     const legajo = p.causas?.nro_legajo ?? '';
     const caratula = p.causas?.caratula_autos ?? '';
     const busq = busqueda.toLowerCase();
@@ -156,7 +171,7 @@ export const PedidosRecibidosPage = () => {
                   <th className="px-4 py-3 font-medium">Fiscal</th>
                   <th className="px-4 py-3 font-medium">Prioridad</th>
                   <th className="px-4 py-3 font-medium">Estado</th>
-                  <th className="px-4 py-3 font-medium">Perito</th>
+                  {profile?.rol !== 'PERITO' && <th className="px-4 py-3 font-medium">Perito</th>}
                   <th className="px-4 py-3 font-medium text-center">Acciones</th>
                 </tr>
               </thead>
@@ -182,7 +197,7 @@ export const PedidosRecibidosPage = () => {
                     <td className="px-4 py-3">
                       <BadgeEstado estado={p.estado} />
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{getPeritoAsignado(p)}</td>
+                    {profile?.rol !== 'PERITO' && <td className="px-4 py-3 text-gray-600">{getPeritoAsignado(p)}</td>}
                     <td className="px-4 py-3 text-center">
                       <Link
                         to={`/pedidos/${p.id}`}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, X, Eye, Users } from 'lucide-react';
+import { useAuth } from '../../../app/providers/AuthProvider';
 import { asignacionesService, type PedidoAsignacionVista } from '../services/asignacionesService';
 import { BadgeEstado, BadgePrioridad } from '../components/BadgesPedido';
 import type { EstadoPedido } from '../../../types/domain';
@@ -25,6 +26,8 @@ export const AsignacionesPage = () => {
   const [filtroPerito, setFiltroPerito] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<EstadoPedido | ''>('');
 
+  const { profile } = useAuth();
+
 
   useEffect(() => {
     const cargar = async () => {
@@ -45,7 +48,16 @@ export const AsignacionesPage = () => {
     return pedidos.filter((pedido) => {
       // Determinar perito activo actual, si tiene
       const asignacionActiva = pedido.asignaciones?.find((asig) => asig.activa);
+      const estaAsignado = !!asignacionActiva;
       const nombrePerito = asignacionActiva?.peritos?.nombre ?? '';
+      const peritoPerfilId = asignacionActiva?.peritos?.perfil_id;
+
+      // Filtro de Rol: si es PERITO, solo ve sus asignados
+      if (profile?.rol === 'PERITO') {
+        if (!estaAsignado || peritoPerfilId !== profile.id) {
+          return false;
+        }
+      }
 
       // Filtro general (número, legajo, carátula)
       const busq = busqueda.toLowerCase();
@@ -146,7 +158,7 @@ export const AsignacionesPage = () => {
                   <th className="px-4 py-3 font-medium">Legajo</th>
                   <th className="px-4 py-3 font-medium">Carátula</th>
                   <th className="px-4 py-3 font-medium">Fiscal</th>
-                  <th className="px-4 py-3 font-medium">Perito</th>
+                  {profile?.rol !== 'PERITO' && <th className="px-4 py-3 font-medium">Perito</th>}
                   <th className="px-4 py-3 font-medium">Apertura</th>
                   <th className="px-4 py-3 font-medium">Prioridad</th>
                   <th className="px-4 py-3 font-medium">Estado</th>
@@ -171,10 +183,12 @@ export const AsignacionesPage = () => {
                       </td>
                       <td className="px-4 py-3 text-gray-700">{pedido.fiscales?.nombre ?? '—'}</td>
                       
-                      {/* Perito */}
-                      <td className="px-4 py-3 text-gray-900 font-medium">
-                        {estaAsignado ? asignacionActiva.peritos?.nombre : <span className="text-gray-400">—</span>}
-                      </td>
+                      {/* Perito - Solo si no es perito */}
+                      {profile?.rol !== 'PERITO' && (
+                        <td className="px-4 py-3 text-gray-900 font-medium">
+                          {estaAsignado ? asignacionActiva.peritos?.nombre : <span className="text-gray-400">—</span>}
+                        </td>
+                      )}
                       
                       {/* Apertura */}
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -201,7 +215,7 @@ export const AsignacionesPage = () => {
                       
                       {/* Acciones */}
                       <td className="px-4 py-3 text-center">
-                        {estaAsignado ? (
+                        {estaAsignado || profile?.rol === 'PERITO' ? (
                           <Link
                             to={`/pedidos/${pedido.id}`}
                             className="inline-flex items-center text-gray-400 hover:text-blue-600 transition-colors p-1 rounded"

@@ -4,8 +4,9 @@ import type { Pedido } from '../../../types/domain';
 export interface PedidoConRelaciones extends Pedido {
   causas: { nro_legajo: string; anio: number; caratula_autos: string; tipo_causa?: string; delito?: string } | null;
   fiscales: { nombre: string; contacto?: string; fiscalias: { nombre: string; circunscripcion: string } | null } | null;
-  asignaciones: { activa: boolean; peritos: { nombre: string } | null }[];
+  asignaciones: { activa: boolean; peritos: { id: string; perfil_id?: string; nombre: string } | null }[];
   aperturas?: { fecha_apertura: string; hora_apertura?: string; observaciones?: string } | null;
+  secuestros?: { id: string; nro_secuestro: string; descripcion_inicial?: string; cantidad_elementos?: number; observaciones?: string; activo: boolean }[] | null;
 }
 
 export interface CrearPedidoPayload {
@@ -67,7 +68,7 @@ export const pedidosService = {
         *,
         causas ( nro_legajo, anio, caratula_autos, tipo_causa, delito ),
         fiscales ( nombre, contacto, fiscalias ( nombre, circunscripcion ) ),
-        asignaciones ( activa, peritos ( nombre ) )
+        asignaciones ( activa, peritos ( id, perfil_id, nombre ) )
       `)
       .eq('activo', true)
       .order('created_at', { ascending: false });
@@ -83,7 +84,7 @@ export const pedidosService = {
         *,
         causas ( nro_legajo, anio, caratula_autos, tipo_causa, delito ),
         fiscales ( nombre, contacto, fiscalias ( nombre, circunscripcion ) ),
-        asignaciones ( activa, peritos ( nombre ) ),
+        asignaciones ( activa, peritos ( id, perfil_id, nombre ) ),
         secuestros ( id, nro_secuestro, descripcion_inicial, cantidad_elementos, observaciones, activo ),
         puntos_periciales ( id, descripcion, alcance, orden ),
         aperturas ( fecha_apertura, hora_apertura, observaciones )
