@@ -12,13 +12,13 @@ const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 const ESTADOS: { value: EstadoPedido | ''; label: string }[] = [
   { value: '', label: 'Todos los estados' },
-  { value: 'PENDIENTE_ASIGNACION', label: 'Pendiente asig.' },
-  { value: 'ASIGNADO', label: 'Asignado' },
-  { value: 'PENDIENTE_APERTURA', label: 'Pend. apertura' },
+  { value: 'PENDIENTE_ASIGNACION', label: 'Pendiente de asignación' },
+  { value: 'PENDIENTE_APERTURA', label: 'Pendiente de apertura' },
   { value: 'EN_PROCESO', label: 'En proceso' },
-  { value: 'SUSPENDIDO', label: 'Suspendido' },
   { value: 'FINALIZADO', label: 'Finalizado' },
   { value: 'ENTREGADO', label: 'Entregado' },
+  { value: 'SUSPENDIDO', label: 'Suspendido' },
+  { value: 'CANCELADO', label: 'Cancelado' },
 ];
 
 const PRIORIDADES: { value: PrioridadPedido | ''; label: string }[] = [

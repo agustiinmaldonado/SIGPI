@@ -8,7 +8,8 @@ export type EstadoPedido =
   | 'EN_PROCESO' 
   | 'SUSPENDIDO' 
   | 'FINALIZADO' 
-  | 'ENTREGADO';
+  | 'ENTREGADO'
+  | 'CANCELADO';
 
 export type PrioridadPedido = 'NORMAL' | 'URGENTE' | 'MUY_URGENTE' | 'CRITICA';
 

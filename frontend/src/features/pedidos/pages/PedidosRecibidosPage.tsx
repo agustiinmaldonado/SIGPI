@@ -9,13 +9,13 @@ import type { EstadoPedido, PrioridadPedido } from '../../../types/domain';
 
 const ESTADOS: { value: EstadoPedido | ''; label: string }[] = [
   { value: '', label: 'Todos los estados' },
-  { value: 'REGISTRADO', label: 'Registrado' },
   { value: 'PENDIENTE_ASIGNACION', label: 'Pendiente de asignación' },
-  { value: 'ASIGNADO', label: 'Asignado' },
+  { value: 'PENDIENTE_APERTURA', label: 'Pendiente de apertura' },
   { value: 'EN_PROCESO', label: 'En proceso' },
-  { value: 'SUSPENDIDO', label: 'Suspendido' },
   { value: 'FINALIZADO', label: 'Finalizado' },
   { value: 'ENTREGADO', label: 'Entregado' },
+  { value: 'SUSPENDIDO', label: 'Suspendido' },
+  { value: 'CANCELADO', label: 'Cancelado' },
 ];
 
 const PRIORIDADES: { value: PrioridadPedido | ''; label: string }[] = [

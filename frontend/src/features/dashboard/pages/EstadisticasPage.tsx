@@ -14,7 +14,6 @@ import { Button } from '../../../components/ui/Button';
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#64748b'];
 
 const ESTADOS_LABELS: Record<string, string> = {
-  REGISTRADO: 'Registrado',
   PENDIENTE_ASIGNACION: 'Pendiente de asignación',
   PENDIENTE_APERTURA: 'Pendiente de apertura',
   EN_PROCESO: 'En proceso',
